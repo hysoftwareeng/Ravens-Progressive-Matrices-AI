@@ -9,9 +9,8 @@
 # These methods will be necessary for the project's main method to run.
 
 # Install Pillow and uncomment this line to access image processing.
-from PIL import Image
+from PIL import Image, ImageChops
 import numpy
-from RavensHelper import retrieve_verbal_attributes
 
 class Agent:
     # The default constructor for your Agent. Make sure to execute any
@@ -22,10 +21,11 @@ class Agent:
     def __init__(self):
         pass
 
+
     # The primary method for solving incoming Raven's Progressive Matrices.
     # For each problem, your Agent's Solve() method will be called. At the
     # conclusion of Solve(), your Agent should return an int representing its
-    # answer to the question: 1, 2, 3, 4, 5, or 6. Strings of these ints 
+    # answer to the question: 1, 2, 3, 4, 5, or 6. Strings of these ints
     # are also the Names of the individual RavensFigures, obtained through
     # RavensFigure.getName(). Return a negative number to skip a problem.
     #
@@ -38,12 +38,50 @@ class Agent:
             return -1
 
         print ('Beginning to solve problem {} of type {}'.format(problem.name, problem.problemType))
+        problem_images = {}
         problem_figures = {}
         for name in problem.figures:
             figure = problem.figures[name]
-            figure_objects = figure.objects
-            retrieve_verbal_attributes(name, figure_objects)
-            file_name = figure.visualFilename
-            image = Image.open(file_name)
-            problem_figures[name] = image
+            image = Image.open(figure.visualFilename)
+            problem_images[name] = image    #dict of images to open for visual approach
+            problem_figures[name] = figure.objects          #dict of all attributes by frame
+        answer = self.build_semantic_network_and_solve(problem_images)
+        return answer
+
+    def build_semantic_network_and_solve(self, problem_images):
+        answer = -1
+        image_a = problem_images['A']
+        image_b = problem_images['B']
+        image_c = problem_images['C']
+
+        if answer == -1:
+            answer = self.transformation_unchanged(image_a, image_b, image_c, problem_images)
+        if answer == -1:
+            answer = self.transformation_y_axis_reflection(image_a, image_b, image_c, problem_images)
+        return answer
+
+    @staticmethod
+    def get_difference(image_a, image_b):
+        return ImageChops.difference(image_a, image_b).getbbox() is None
+
+    def transformation_unchanged(self, image_a, image_b, image_c, problem_images):
+        is_same_ab = self.get_difference(image_a, image_b)
+        is_same_ac = self.get_difference(image_a, image_c)
+        #both A to B and A to C are unchanged
+        if is_same_ab and is_same_ac:
+            for choice in range(1, 7):
+                image_choice = problem_images[str(choice)]
+                if self.get_difference(image_c, image_choice):
+                    return choice
+        return -1
+
+    def transformation_y_axis_reflection(self, image_a, image_b, image_c, problem_images):
+        image_a_vertical_reflected = image_a.transpose(Image.FLIP_LEFT_RIGHT)
+        is_same = self.get_difference(image_b, image_a_vertical_reflected)
+        if is_same:
+            image_c_vertical_reflected = image_c.transpose(Image.FLIP_LEFT_RIGHT)
+            for choice in range(1, 7):
+                image_choice = problem_images[str(choice)]
+                if self.get_difference(image_c_vertical_reflected, image_choice):
+                    return choice
         return -1
