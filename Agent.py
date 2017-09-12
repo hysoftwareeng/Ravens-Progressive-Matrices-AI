@@ -11,7 +11,7 @@
 # Install Pillow and uncomment this line to access image processing.
 from PIL import Image, ImageChops
 import numpy as np
-from AgentHelper import get_difference, get_answer_by_image, countBlackPixels, countWhitePixels, countTotalPixels
+from AgentHelper import get_difference, get_answer_by_image, countBlackPixels, countWhitePixels, countTotalPixels, calc_rms
 
 class Agent:
     # The default constructor for your Agent. Make sure to execute any
@@ -34,8 +34,7 @@ class Agent:
     # Returning your answer as a string may cause your program to crash.
     def Solve(self,problem):
         #Skip 3x3 problems for the first Project
-        if problem.problemType == '3x3':
-            print
+        if problem.problemType == '3x3':# or problem.name != 'Basic Problem B-06':
             return -1
 
         print ('Beginning to solve problem {} of type {}'.format(problem.name, problem.problemType))
@@ -43,7 +42,7 @@ class Agent:
         problem_figures = {}
         for name in problem.figures:
             figure = problem.figures[name]
-            image = Image.open(figure.visualFilename)
+            image = Image.open(figure.visualFilename).convert('1')
             problem_images[name] = image    #dict of images to open for visual approach
             problem_figures[name] = figure.objects          #dict of all attributes by frame
         answer = self.build_semantic_network_and_solve(problem_images)
@@ -58,17 +57,36 @@ class Agent:
         if answer == -1:
             answer = self.transformation_unchanged(image_a, image_b, image_c, problem_images)
         if answer == -1:
+            answer = self.transformation_y_axis_reflection(image_a, image_b, image_c, problem_images)
+        if answer == -1:
+            answer = self.transformation_x_axis_reflection(image_a, image_b, image_c, problem_images)
+        if answer == -1:
+            answer = self.transformation_and(image_a, image_b, image_c, problem_images)
+        if answer == -1:
             answer = self.transformation_pixel_ratio_frame(image_a, image_b, image_c, problem_images)
         if answer == -1:
             answer = self.transformation_pixel_ratio_half_frame_vertical(image_a, image_b, image_c, problem_images)
         return answer
-        # if answer == -1:
-        #     answer = self.transformation_unchanged(image_a, image_b, image_c, problem_images)
-        # if answer == -1:
-        #     answer = self.transformation_y_axis_reflection(image_a, image_b, image_c, problem_images)
-        # if answer == -1:
-        #     answer = self.transformation_x_axis_reflection(image_a, image_b, image_c, problem_images)
 
+
+    def transformation_and(self, image_a, image_b, image_c, problem_images):
+        #A to B is add fill
+        image_ab_and = ImageChops.logical_and(image_a, image_b)
+        is_same_ab_and = get_difference(image_ab_and, image_b)
+        black_pixel_inc = (countBlackPixels(image_b)-countBlackPixels(image_a))/countBlackPixels(image_a)
+        potential_choices = {}
+        if is_same_ab_and:
+            for choice in range(1, 7):
+                image_choice = problem_images[str(choice)]
+                image_cd_and = ImageChops.logical_and(image_c, image_choice)
+                is_same_cd_and = get_difference(image_cd_and, image_choice)
+                if is_same_cd_and:
+                    black_pixel_inc_cd = (countBlackPixels(image_choice) - countBlackPixels(image_c)) / countBlackPixels(
+                        image_c)
+                    potential_choices[black_pixel_inc_cd] = choice
+            key = min(potential_choices.keys(), key=lambda x: abs(x - black_pixel_inc))
+            return potential_choices[key]
+        return -1
 
     def transformation_pixel_ratio_frame(self, image_a, image_b, image_c, problem_images):
 
@@ -155,6 +173,6 @@ class Agent:
         image_a_vertical_reflected = image_a.transpose(Image.FLIP_TOP_BOTTOM)
         is_same = get_difference(image_c, image_a_vertical_reflected)
         if is_same:
-            image_b_vertical_reflected = image_b.transpose(Image.FLIP_LEFT_RIGHT)
+            image_b_vertical_reflected = image_b.transpose(Image.FLIP_TOP_BOTTOM)
             return get_answer_by_image(image_b_vertical_reflected, problem_images)
         return -1

@@ -3,7 +3,7 @@ import numpy as np
 import math, operator, functools
 
 def get_difference(image_a, image_b):
-    if ImageChops.difference(image_a, image_b).getbbox() is None:
+    if ImageChops.difference(image_a, image_b).getbbox() is None or calc_rms(image_a, image_b) <= 45:
         return True
     return False
 
