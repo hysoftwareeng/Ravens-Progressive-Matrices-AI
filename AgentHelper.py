@@ -1,6 +1,6 @@
 from PIL import Image, ImageChops
 import numpy as np
-import math, operator, functools
+import math
 
 
 def check_if_same(image_a, image_b):
@@ -42,20 +42,6 @@ def count_black_pixels(img):
     # logger.info("Count Black Pixels in: %r" % bbox)
     return sum(img.crop(bbox)
                .point(lambda x: 0 if x else 255)
-               .convert("L")
-               .point(bool)
-               .getdata())
-
-
-def count_white_pixels(image):
-    """Return the number of pixels in img that are not black.
-    img must be a PIL.Image object in mode RGB.
-
-    """
-    bbox = image.getbbox()
-    if not bbox: return 0
-    return sum(image.crop(bbox)
-               .point(lambda x: 255 if x else 0)
                .convert("L")
                .point(bool)
                .getdata())

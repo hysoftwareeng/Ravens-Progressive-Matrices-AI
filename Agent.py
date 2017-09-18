@@ -11,7 +11,7 @@
 # Install Pillow and uncomment this line to access image processing.
 from PIL import Image, ImageChops
 import numpy as np
-from AgentHelper import check_if_same, get_answer_by_image, count_black_pixels, count_white_pixels, count_total_pixels, calc_rms
+from AgentHelper import check_if_same, get_answer_by_image, count_black_pixels, count_total_pixels
 
 class Agent:
     # The default constructor for your Agent. Make sure to execute any
@@ -34,9 +34,9 @@ class Agent:
     # Returning your answer as a string may cause your program to crash.
     def Solve(self,problem):
         #Skip 3x3 problems for the first Project
-        if problem.problemType == '3x3':# or problem.name != 'Basic Problem B-06':
+        if problem.problemType == '3x3': #or problem.name != 'Basic Problem B-06':
             return -1
-
+        print('-----------------------------------------------------------------------------------')
         print ('Beginning to solve problem {} of type {}'.format(problem.name, problem.problemType))
         problem_images = {}
         problem_figures = {}
@@ -61,11 +61,11 @@ class Agent:
         if answer == -1:
             answer = self.transformation_x_axis_reflection(image_a, image_b, image_c, problem_images)
         if answer == -1:
-            answer = self.transformation_and(image_a, image_b, image_c, problem_images)
-        if answer == -1:
             answer = self.transformation_pixel_ratio_frame(image_a, image_b, image_c, problem_images)
         if answer == -1:
             answer = self.transformation_pixel_ratio_half_frame_vertical(image_a, image_b, image_c, problem_images)
+        if answer == -1:
+            answer = self.transformation_and(image_a, image_b, image_c, problem_images)
         return answer
 
 
@@ -204,7 +204,6 @@ class Agent:
             return potential_solutions[0]
 
         return -1
-
 
     def transformation_unchanged(self, image_a, image_b, image_c, problem_images):
         print('Solve by UNCHANGED transformation')
