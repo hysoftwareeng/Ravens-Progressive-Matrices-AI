@@ -8,7 +8,6 @@ def check_if_same(image_a, image_b):
         return True
     return False
 
-
 def get_answer_by_image(image_template, problem_images):
     answer_choice = []
     for choice in range(1, 7):

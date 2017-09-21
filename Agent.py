@@ -34,7 +34,7 @@ class Agent:
     # Returning your answer as a string may cause your program to crash.
     def Solve(self,problem):
         #Skip 3x3 problems for the first Project
-        if problem.problemType == '3x3':
+        if problem.problemType == '3x3': #or problem.name != 'Basic Problem B-10':
             return -1
         print('-----------------------------------------------------------------------------------')
         print ('Beginning to solve problem {} of type {}'.format(problem.name, problem.problemType))
@@ -71,6 +71,47 @@ class Agent:
         return answer
 
 
+    #chop square frame into two halves vertically and compare, left, upper, right, lower
+    def transformation_pixel_ratio_half_frame_vertical(self, image_a, image_b, image_c, problem_images):
+        print('Solve by PIXEL RATIO HALF FRAME VERTICAL transformation')
+        width, height = image_a.size
+        image_a_first_half = image_a.crop((0,0,width/2, height))
+        image_a_second_half = image_a.crop((width/2, 0, width, height))
+        image_b_first_half = image_b.crop((0,0,width/2, height))
+        image_b_second_half = image_b.crop((width/2, 0, width, height))
+        image_c_first_half = image_c.crop((0,0,width/2, height))
+        image_c_second_half = image_c.crop((width/2, 0, width, height))
+
+        black_pixel_ratio_a_first_half = count_black_pixels(image_a_first_half) / count_total_pixels(image_a_first_half)
+        black_pixel_ratio_b_first_half = count_black_pixels(image_b_first_half) / count_total_pixels(image_b_first_half)
+        black_pixel_ratio_c_first_half = count_black_pixels(image_c_first_half) / count_total_pixels(image_c_first_half)
+
+        black_pixel_ratio_a_second_half = count_black_pixels(image_a_second_half) / count_total_pixels(image_a_second_half)
+        black_pixel_ratio_b_second_half = count_black_pixels(image_b_second_half) / count_total_pixels(image_b_second_half)
+        black_pixel_ratio_c_second_half = count_black_pixels(image_c_second_half) / count_total_pixels(image_c_second_half)
+
+        ratio_diff_first_ab = black_pixel_ratio_b_first_half - black_pixel_ratio_a_first_half
+        ratio_diff_second_ab = black_pixel_ratio_b_second_half - black_pixel_ratio_a_second_half
+
+        potential_solutions = []
+        for choice in range(1, 7):
+            image_choice = problem_images[str(choice)]
+            image_choice_first_half = image_choice.crop((0, 0, width / 2, height))
+            image_choice_second_half = image_choice.crop((width / 2, 0, width, height))
+            black_pixel_ratio_choice_first_half = count_black_pixels(image_choice_first_half) / count_total_pixels(image_choice_first_half)
+            black_pixel_ratio_choice_second_half = count_black_pixels(image_choice_second_half) / count_total_pixels(image_choice_second_half)
+
+            ratio_diff_first_choicec = black_pixel_ratio_choice_first_half - black_pixel_ratio_c_first_half
+            ratio_diff_second_choicec = black_pixel_ratio_choice_second_half - black_pixel_ratio_c_second_half
+
+            if np.abs(ratio_diff_first_choicec - ratio_diff_first_ab) <= 0.005 and abs(ratio_diff_second_choicec - ratio_diff_second_ab) <= 0.005:
+                potential_solutions.append(choice)
+
+        if len(potential_solutions) == 1:
+            return potential_solutions[0]
+
+        return -1
+
     def transformation_and(self, image_a, image_b, image_c, problem_images):
         print('Solve by AND transformation')
 
@@ -80,32 +121,14 @@ class Agent:
 
         #A to B is add fill
         is_same_ab_and_add = check_if_same(image_ab_and, image_b)
-        black_pixel_inc = (count_black_pixels(image_b) - count_black_pixels(image_a)) / count_black_pixels(image_a)
+        black_pixel_inc = count_black_pixels(image_b) - count_black_pixels(image_a)
         if is_same_ab_and_add:
             for choice in range(1, 7):
                 image_choice = problem_images[str(choice)]
                 image_cd_and = ImageChops.logical_and(image_c, image_choice)
                 is_same_cd_and = check_if_same(image_cd_and, image_choice)
                 if is_same_cd_and:
-                    black_pixel_inc_cd = (count_black_pixels(image_choice) - count_black_pixels(image_c)) / count_black_pixels(
-                        image_c)
-                    potential_choices[black_pixel_inc_cd] = choice
-            if potential_choices:
-                key = min(potential_choices.keys(), key=lambda x: abs(x - black_pixel_inc))
-                return potential_choices[key]
-
-        #A to B is remove fill
-        is_same_ab_and_rm = check_if_same(image_ab_and, image_a)
-        black_pixel_inc = (count_black_pixels(image_b) - count_black_pixels(image_a)) / count_black_pixels(image_a)
-        if is_same_ab_and_rm:
-            for choice in range(1, 7):
-                image_choice = problem_images[str(choice)]
-                image_cd_and = ImageChops.logical_and(image_c, image_choice)
-                is_same_cd_and_rm = check_if_same(image_cd_and, image_c)
-                if is_same_cd_and_rm:
-                    black_pixel_inc_cd = (count_black_pixels(image_choice) - count_black_pixels(
-                        image_c)) / count_black_pixels(
-                        image_c)
+                    black_pixel_inc_cd = count_black_pixels(image_choice) - count_black_pixels(image_c)
                     potential_choices[black_pixel_inc_cd] = choice
             if potential_choices:
                 key = min(potential_choices.keys(), key=lambda x: abs(x - black_pixel_inc))
@@ -113,35 +136,47 @@ class Agent:
 
         #A to C is add fill
         is_same_ac_and_add = check_if_same(image_ac_and, image_c)
-        black_pixel_inc = (count_black_pixels(image_c) - count_black_pixels(image_a)) / count_black_pixels(image_a)
+        black_pixel_inc = count_black_pixels(image_c) - count_black_pixels(image_a)
         if is_same_ac_and_add:
             for choice in range(1, 7):
                 image_choice = problem_images[str(choice)]
                 image_bd_and = ImageChops.logical_and(image_b, image_choice)
                 is_same_bd_and = check_if_same(image_bd_and, image_choice)
                 if is_same_bd_and:
-                    black_pixel_inc_bd = (count_black_pixels(image_choice) - count_black_pixels(image_b)) / count_black_pixels(
-                        image_b)
+                    black_pixel_inc_bd = count_black_pixels(image_choice) - count_black_pixels(image_b)
                     potential_choices[black_pixel_inc_bd] = choice
             if potential_choices:
                 key = min(potential_choices.keys(), key=lambda x: abs(x - black_pixel_inc))
                 return potential_choices[key]
 
+        #A to B is remove fill
+        is_same_ab_and_add = check_if_same(image_ab_and, image_a)
+        black_pixel_dec = count_black_pixels(image_b) - count_black_pixels(image_a)
+        if is_same_ab_and_add:
+            for choice in range(1, 7):
+                image_choice = problem_images[str(choice)]
+                image_cd_and = ImageChops.logical_and(image_c, image_choice)
+                is_same_cd_and = check_if_same(image_cd_and, image_c)
+                if is_same_cd_and:
+                    black_pixel_dec_cd = count_black_pixels(image_choice) - count_black_pixels(image_c)
+                    potential_choices[black_pixel_dec_cd] = choice
+            if potential_choices:
+                key = min(potential_choices.keys(), key=lambda x: abs(x - black_pixel_dec))
+                return potential_choices[key]
+
         #A to C is remove fill
-        is_same_ac_and_rm = check_if_same(image_ac_and, image_a)
-        black_pixel_inc = (count_black_pixels(image_c) - count_black_pixels(image_a)) / count_black_pixels(image_a)
-        if is_same_ac_and_rm:
+        is_same_ac_and_add = check_if_same(image_ac_and, image_a)
+        black_pixel_dec = count_black_pixels(image_c) - count_black_pixels(image_a)
+        if is_same_ac_and_add:
             for choice in range(1, 7):
                 image_choice = problem_images[str(choice)]
                 image_bd_and = ImageChops.logical_and(image_b, image_choice)
-                is_same_bd_and_rm = check_if_same(image_bd_and, image_b)
-                if is_same_bd_and_rm:
-                    black_pixel_inc_bd = (count_black_pixels(image_choice) - count_black_pixels(
-                        image_b)) / count_black_pixels(
-                        image_b)
-                    potential_choices[black_pixel_inc_bd] = choice
+                is_same_bd_and = check_if_same(image_bd_and, image_b)
+                if is_same_bd_and:
+                    black_pixel_dec_bd = count_black_pixels(image_choice) - count_black_pixels(image_b)
+                    potential_choices[black_pixel_dec_bd] = choice
             if potential_choices:
-                key = min(potential_choices.keys(), key=lambda x: abs(x - black_pixel_inc))
+                key = min(potential_choices.keys(), key=lambda x: abs(x - black_pixel_dec))
                 return potential_choices[key]
         return -1
 
@@ -160,6 +195,16 @@ class Agent:
             image_choice = problem_images[str(choice)]
             black_pixel_ratio_image_choice = count_black_pixels(image_choice) / count_total_pixels(image_choice)
             if black_pixel_ratio_image_choice - black_pixel_ratio_c == black_pixels_ratio_diff_ab:
+                potential_solutions.append(choice)
+
+        if len(potential_solutions) == 1:
+            return potential_solutions[0]
+
+        potential_solutions = []
+        for choice in range(1, 7):
+            image_choice = problem_images[str(choice)]
+            black_pixel_ratio_image_choice = count_black_pixels(image_choice) / count_total_pixels(image_choice)
+            if black_pixel_ratio_image_choice - black_pixel_ratio_b == black_pixels_ratio_diff_ac:
                 potential_solutions.append(choice)
 
         if len(potential_solutions) == 1:
