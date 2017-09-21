@@ -34,7 +34,7 @@ class Agent:
     # Returning your answer as a string may cause your program to crash.
     def Solve(self,problem):
         #Skip 3x3 problems for the first Project
-        if problem.problemType == '3x3': #or problem.name != 'Basic Problem B-06':
+        if problem.problemType == '3x3':
             return -1
         print('-----------------------------------------------------------------------------------')
         print ('Beginning to solve problem {} of type {}'.format(problem.name, problem.problemType))
@@ -61,9 +61,11 @@ class Agent:
         if answer == -1:
             answer = self.transformation_x_axis_reflection(image_a, image_b, image_c, problem_images)
         if answer == -1:
-            answer = self.transformation_pixel_ratio_frame(image_a, image_b, image_c, problem_images)
+            answer = self.transformation_rotation(image_a, image_b, image_c, problem_images)
         if answer == -1:
-            answer = self.transformation_pixel_ratio_half_frame_vertical(image_a, image_b, image_c, problem_images)
+            answer = self.transformation_pixel_diff(image_a, image_b, image_c, problem_images)
+        if answer == -1:
+            answer = self.transformation_pixel_ratio_frame(image_a, image_b, image_c, problem_images)
         if answer == -1:
             answer = self.transformation_and(image_a, image_b, image_c, problem_images)
         return answer
@@ -164,59 +166,24 @@ class Agent:
             return potential_solutions[0]
         return -1
 
-    #chop square frame into two halves vertically and compare, left, upper, right, lower
-    def transformation_pixel_ratio_half_frame_vertical(self, image_a, image_b, image_c, problem_images):
-        print('Solve by PIXEL RATIO HALF FRAME VERTICAL transformation')
-        width, height = image_a.size
-        image_a_first_half = image_a.crop((0,0,width/2, height))
-        image_a_second_half = image_a.crop((width/2, 0, width, height))
-        image_b_first_half = image_b.crop((0,0,width/2, height))
-        image_b_second_half = image_b.crop((width/2, 0, width, height))
-        image_c_first_half = image_c.crop((0,0,width/2, height))
-        image_c_second_half = image_c.crop((width/2, 0, width, height))
-
-        black_pixel_ratio_a_first_half = count_black_pixels(image_a_first_half) / count_total_pixels(image_a_first_half)
-        black_pixel_ratio_b_first_half = count_black_pixels(image_b_first_half) / count_total_pixels(image_b_first_half)
-        black_pixel_ratio_c_first_half = count_black_pixels(image_c_first_half) / count_total_pixels(image_c_first_half)
-
-        black_pixel_ratio_a_second_half = count_black_pixels(image_a_second_half) / count_total_pixels(image_a_second_half)
-        black_pixel_ratio_b_second_half = count_black_pixels(image_b_second_half) / count_total_pixels(image_b_second_half)
-        black_pixel_ratio_c_second_half = count_black_pixels(image_c_second_half) / count_total_pixels(image_c_second_half)
-
-        ratio_diff_first_ab = black_pixel_ratio_b_first_half - black_pixel_ratio_a_first_half
-        ratio_diff_second_ab = black_pixel_ratio_b_second_half - black_pixel_ratio_a_second_half
-
-        potential_solutions = []
-        for choice in range(1, 7):
-            image_choice = problem_images[str(choice)]
-            image_choice_first_half = image_choice.crop((0, 0, width / 2, height))
-            image_choice_second_half = image_choice.crop((width / 2, 0, width, height))
-            black_pixel_ratio_choice_first_half = count_black_pixels(image_choice_first_half) / count_total_pixels(image_choice_first_half)
-            black_pixel_ratio_choice_second_half = count_black_pixels(image_choice_second_half) / count_total_pixels(image_choice_second_half)
-
-            ratio_diff_first_choicec = black_pixel_ratio_choice_first_half - black_pixel_ratio_c_first_half
-            ratio_diff_second_choicec = black_pixel_ratio_choice_second_half - black_pixel_ratio_c_second_half
-
-            if np.abs(ratio_diff_first_choicec - ratio_diff_first_ab) <= 0.005 and abs(ratio_diff_second_choicec - ratio_diff_second_ab) <= 0.005:
-                potential_solutions.append(choice)
-
-        if len(potential_solutions) == 1:
-            return potential_solutions[0]
-
-        return -1
-
     def transformation_unchanged(self, image_a, image_b, image_c, problem_images):
         print('Solve by UNCHANGED transformation')
         is_same_ab = check_if_same(image_a, image_b)
         is_same_ac = check_if_same(image_a, image_c)
         #both A to B and A to C are unchanged
         if is_same_ab and is_same_ac:
-            return get_answer_by_image(image_c, problem_images)
+            answers = get_answer_by_image(image_c, problem_images)
+            if (len(answers) == 1):
+                return answers[0]
         #A and C are unchanged
         elif is_same_ac:
-            return get_answer_by_image(image_b, problem_images)
+            answers = get_answer_by_image(image_b, problem_images)
+            if (len(answers) == 1):
+                return answers[0]
         elif is_same_ab:
-            return get_answer_by_image(image_c, problem_images)
+            answers = get_answer_by_image(image_c, problem_images)
+            if (len(answers) == 1):
+                return answers[0]
         return -1
 
     def transformation_y_axis_reflection(self, image_a, image_b, image_c, problem_images):
@@ -227,12 +194,16 @@ class Agent:
         is_same_ab = check_if_same(image_b, image_a_reflected)
         if is_same_ab:
             image_c_reflected = image_c.transpose(Image.FLIP_LEFT_RIGHT)
-            return get_answer_by_image(image_c_reflected, problem_images)
+            answers = get_answer_by_image(image_c_reflected, problem_images)
+            if (len(answers) == 1):
+                return answers[0]
 
         is_same_ac = check_if_same(image_c, image_a_reflected)
         if is_same_ac:
             image_b_reflected = image_b.transpose(Image.FLIP_LEFT_RIGHT)
-            return get_answer_by_image(image_b_reflected, problem_images)
+            answers = get_answer_by_image(image_b_reflected, problem_images)
+            if (len(answers) == 1):
+                return answers[0]
         return -1
 
     def transformation_x_axis_reflection(self, image_a, image_b, image_c, problem_images):
@@ -243,10 +214,75 @@ class Agent:
         is_same_ab = check_if_same(image_b, image_a_vertical_reflected)
         if is_same_ab:
             image_c_reflected = image_c.transpose(Image.FLIP_TOP_BOTTOM)
-            return get_answer_by_image(image_c_reflected, problem_images)
+            answers = get_answer_by_image(image_c_reflected, problem_images)
+            if (len(answers) == 1):
+                return answers[0]
 
         is_same_ac = check_if_same(image_c, image_a_vertical_reflected)
         if is_same_ac:
             image_b_reflected = image_b.transpose(Image.FLIP_TOP_BOTTOM)
-            return get_answer_by_image(image_b_reflected, problem_images)
+            answers = get_answer_by_image(image_b_reflected, problem_images)
+            if (len(answers) == 1):
+                return answers[0]
         return -1
+
+    def transformation_rotation(self, image_a, image_b, image_c, problem_images):
+        print('Solve by ROTATION transformation')
+
+        degrees = [-45, -90, -135, -180, -225, -270, -315]
+        for angle in degrees:
+            image_a_rotated = image_a.rotate(angle)
+            is_same_ab = check_if_same(image_a_rotated, image_b)
+            is_same_ac = check_if_same(image_a_rotated, image_c)
+
+            if is_same_ab:
+                solutions = []
+                image_c_rotated = image_c.rotate(angle)
+                for choice in range(1,7):
+                    image_choice = problem_images[str(choice)]
+                    is_same_cd = check_if_same(image_c_rotated, image_choice)
+                    if is_same_cd:
+                        solutions.append(choice)
+                return solutions[0] if len(solutions) == 1 else -1
+
+            if is_same_ac:
+                solutions = []
+                image_b_rotated = image_b.rotate(angle)
+                for choice in range(1,7):
+                    image_choice = problem_images[str(choice)]
+                    is_same_bd = check_if_same(image_b_rotated, image_choice)
+                    if is_same_bd:
+                        solutions.append(choice)
+                return solutions[0] if len(solutions) == 1 else -1
+        return -1
+
+    def transformation_pixel_diff(self, image_a, image_b, image_c, problem_images):
+        print('Solve by PIXEL DIFFERENCE transformation')
+        image_a_black = count_black_pixels(image_a)
+        image_b_black = count_black_pixels(image_b)
+        image_c_black = count_black_pixels(image_c)
+
+        diff_ab = image_a_black - image_b_black
+        diff_ac = image_a_black - image_c_black
+
+        solutions = []
+        for choice in range(1,7):
+            image_choice = problem_images[str(choice)]
+            image_choice_black = count_black_pixels(image_choice)
+            curr_diff = image_c_black - image_choice_black
+            if diff_ab - curr_diff <= 5:
+                solutions.append(choice)
+        if (len(solutions) == 1):
+            return solutions[0]
+
+        for choice in range(1,7):
+            image_choice = problem_images[str(choice)]
+            image_choice_black = count_black_pixels(image_choice)
+            curr_diff = image_b_black - image_choice_black
+            if diff_ac - curr_diff <= 5:
+                solutions.append(choice)
+        return solutions[0] if len(solutions) == 1 else -1
+
+
+
+
