@@ -33,8 +33,8 @@ class Agent:
     # Make sure to return your answer *as an integer* at the end of Solve().
     # Returning your answer as a string may cause your program to crash.
     def Solve(self,problem):
-        #Skip 3x3 problems for the first Project
-        if problem.problemType == '3x3': #or problem.name != 'Basic Problem B-10':
+        #Skip 2x2 problems for testing Project 2
+        if problem.problemType == '2x2':
             return -1
         print('-----------------------------------------------------------------------------------')
         print ('Beginning to solve problem {} of type {}'.format(problem.name, problem.problemType))
@@ -45,29 +45,33 @@ class Agent:
             image = Image.open(figure.visualFilename).convert('1')
             problem_images[name] = image    #dict of images to open for visual approach
             problem_figures[name] = figure.objects          #dict of all attributes by frame
-        answer = self.build_semantic_network_and_solve(problem_images)
+        answer = self.build_semantic_network_and_solve(problem_images, problem.problemType)
         return answer
 
-    def build_semantic_network_and_solve(self, problem_images):
+    def build_semantic_network_and_solve(self, problem_images, problem_type):
         answer = -1
-        image_a = problem_images['A']
-        image_b = problem_images['B']
-        image_c = problem_images['C']
 
-        if answer == -1:
-            answer = self.transformation_unchanged(image_a, image_b, image_c, problem_images)
-        if answer == -1:
-            answer = self.transformation_y_axis_reflection(image_a, image_b, image_c, problem_images)
-        if answer == -1:
-            answer = self.transformation_x_axis_reflection(image_a, image_b, image_c, problem_images)
-        if answer == -1:
-            answer = self.transformation_rotation(image_a, image_b, image_c, problem_images)
-        if answer == -1:
-            answer = self.transformation_pixel_diff(image_a, image_b, image_c, problem_images)
-        if answer == -1:
-            answer = self.transformation_pixel_ratio_frame(image_a, image_b, image_c, problem_images)
-        if answer == -1:
-            answer = self.transformation_and(image_a, image_b, image_c, problem_images)
+        if problem_type == '2x2':
+            image_a = problem_images['A']
+            image_b = problem_images['B']
+            image_c = problem_images['C']
+
+            if answer == -1:
+                answer = self.transformation_unchanged(problem_images, problem_type)
+            if answer == -1:
+                answer = self.transformation_y_axis_reflection(image_a, image_b, image_c, problem_images)
+            if answer == -1:
+                answer = self.transformation_x_axis_reflection(image_a, image_b, image_c, problem_images)
+            if answer == -1:
+                answer = self.transformation_rotation(image_a, image_b, image_c, problem_images)
+            if answer == -1:
+                answer = self.transformation_pixel_diff(image_a, image_b, image_c, problem_images)
+            if answer == -1:
+                answer = self.transformation_pixel_ratio_frame(image_a, image_b, image_c, problem_images)
+            if answer == -1:
+                answer = self.transformation_and(image_a, image_b, image_c, problem_images)
+        elif problem_type == '3x3':
+            answer = self.transformation_unchanged(problem_images, problem_type)
         return answer
 
 
@@ -211,24 +215,54 @@ class Agent:
             return potential_solutions[0]
         return -1
 
-    def transformation_unchanged(self, image_a, image_b, image_c, problem_images):
+    def transformation_unchanged(self, problem_images, problem_type):
         print('Solve by UNCHANGED transformation')
-        is_same_ab = check_if_same(image_a, image_b)
-        is_same_ac = check_if_same(image_a, image_c)
-        #both A to B and A to C are unchanged
-        if is_same_ab and is_same_ac:
-            answers = get_answer_by_image(image_c, problem_images)
-            if (len(answers) == 1):
-                return answers[0]
-        #A and C are unchanged
-        elif is_same_ac:
-            answers = get_answer_by_image(image_b, problem_images)
-            if (len(answers) == 1):
-                return answers[0]
-        elif is_same_ab:
-            answers = get_answer_by_image(image_c, problem_images)
-            if (len(answers) == 1):
-                return answers[0]
+        if problem_type == '2x2':
+            image_a = problem_images['A']
+            image_b = problem_images['B']
+            image_c = problem_images['C']
+
+            is_same_ab = check_if_same(image_a, image_b)
+            is_same_ac = check_if_same(image_a, image_c)
+            #both A to B and A to C are unchanged
+            if is_same_ab and is_same_ac:
+                answers = get_answer_by_image(image_c, problem_images)
+                if (len(answers) == 1):
+                    return answers[0]
+            #A and C are unchanged
+            elif is_same_ac:
+                answers = get_answer_by_image(image_b, problem_images)
+                if (len(answers) == 1):
+                    return answers[0]
+            elif is_same_ab:
+                answers = get_answer_by_image(image_c, problem_images)
+                if (len(answers) == 1):
+                    return answers[0]
+        if problem_type == '3x3':
+            image_a = problem_images['A']
+            image_b = problem_images['B']
+            image_c = problem_images['C']
+            image_d = problem_images['D']
+            image_f = problem_images['F']
+            image_g = problem_images['G']
+            image_h = problem_images['H']
+
+            is_same_ab = check_if_same(image_a, image_b)
+            is_same_bc = check_if_same(image_b, image_c)
+            is_same_ac = check_if_same(image_a, image_c)
+            is_same_ad = check_if_same(image_a, image_d)
+            is_same_dg = check_if_same(image_d, image_g)
+            is_same_gh = check_if_same(image_g, image_h)
+            is_same_cf = check_if_same(image_c, image_f)
+
+            if is_same_ab and is_same_bc and is_same_gh:
+                answers = get_answer_by_image(image_h, problem_images)
+                if (len(answers) == 1):
+                    return answers[0]
+            elif is_same_ad and is_same_dg and is_same_cf:
+                answers = get_answer_by_image(image_f, problem_images)
+                if (len(answers) == 1):
+                    return answers[0]
         return -1
 
     def transformation_y_axis_reflection(self, image_a, image_b, image_c, problem_images):
@@ -327,7 +361,4 @@ class Agent:
             if diff_ac - curr_diff <= 5:
                 solutions.append(choice)
         return solutions[0] if len(solutions) == 1 else -1
-
-
-
 

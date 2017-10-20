@@ -8,6 +8,13 @@ def check_if_same(image_a, image_b):
         return True
     return False
 
+def check_exactly_same(image_a, image_b):
+    if ImageChops.difference(image_a, image_b).getbbox() is None:
+        return True
+    return False
+
+
+
 def get_answer_by_image(image_template, problem_images):
     answer_choice = []
     for choice in range(1, 7):
@@ -17,8 +24,8 @@ def get_answer_by_image(image_template, problem_images):
     return answer_choice
 
 
+#REFERENCED METHOD: http://effbot.org/zone/pil-comparing-images.htm#rms
 def calc_rms(source, compare):
-    # http://effbot.org/zone/pil-comparing-images.htm#rms
     # calculate the root-mean-square difference between two images
 
     "Calculate the root-mean-square difference between two images"
@@ -28,11 +35,12 @@ def calc_rms(source, compare):
     sum_of_squares = sum(sq)
     rms = math.sqrt(sum_of_squares / float(source.size[0] * source.size[1]))
     return round(rms, 0)
+#REFERENCE END
 
 
+#REFERENCED METHOD: https://codereview.stackexchange.com/questions/55902/fastest-way-to-count-non-zero-pixels-using-python-and-pillow
 def count_black_pixels(img):
     """
-    https://codereview.stackexchange.com/questions/55902/fastest-way-to-count-non-zero-pixels-using-python-and-pillow
     Return the number of pixels in img that ARE black.
     img must be a PIL.Image object in mode L.
     """
@@ -43,6 +51,7 @@ def count_black_pixels(img):
                .convert("L")
                .point(bool)
                .getdata())
+#REFERENCE END
 
 
 def count_total_pixels(img):
