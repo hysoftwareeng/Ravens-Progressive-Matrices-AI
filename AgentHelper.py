@@ -14,10 +14,13 @@ def check_exactly_same(image_a, image_b):
     return False
 
 
-
-def get_answer_by_image(image_template, problem_images):
+def get_answer_by_image(image_template, problem_images, problem_type):
     answer_choice = []
-    for choice in range(1, 7):
+    if problem_type == '2x2':
+        choices = 7
+    elif problem_type == '3x3':
+        choices = 9
+    for choice in range(1, choices):
         image_choice = problem_images[str(choice)]
         if check_if_same(image_template, image_choice):
             answer_choice.append(choice)
