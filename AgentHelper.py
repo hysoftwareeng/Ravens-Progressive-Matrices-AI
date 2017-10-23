@@ -13,6 +13,11 @@ def check_exactly_same(image_a, image_b):
         return True
     return False
 
+def check_if_same_special(image_a, image_b):
+    if ImageChops.difference(image_a, image_b).getbbox() is None or calc_rms(image_a, image_b) <= 35:
+        return True
+    return False
+
 
 def get_answer_by_image(image_template, problem_images, problem_type):
     answer_choice = []
