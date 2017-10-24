@@ -18,6 +18,19 @@ def check_if_same_special(image_a, image_b):
         return True
     return False
 
+def get_cropped_image(image_a):
+    pixels = np.asarray(image_a)
+    #retrieve top x coordinate
+    coordinates = np.argwhere(pixels == False)
+    top = min(coordinates[:,0])
+    bottom = max(coordinates[:,0])
+    left =  min(coordinates[:,1])
+    right = max(coordinates[:,1])
+    width = right - left + 1
+    height = bottom - top + 1
+    return image_a.crop((left, top, right, bottom))
+
+
 
 def get_answer_by_image(image_template, problem_images, problem_type):
     answer_choice = []

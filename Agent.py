@@ -11,7 +11,7 @@
 # Install Pillow and uncomment this line to access image processing.
 from PIL import Image, ImageChops
 import numpy as np
-from AgentHelper import check_if_same, get_answer_by_image, count_black_pixels, count_total_pixels, check_if_same_special, calc_rms
+from AgentHelper import check_if_same, get_answer_by_image, count_black_pixels, count_total_pixels, check_if_same_special, calc_rms, get_cropped_image
 
 class Agent:
     # The default constructor for your Agent. Make sure to execute any
@@ -34,7 +34,7 @@ class Agent:
     # Returning your answer as a string may cause your program to crash.
     def Solve(self,problem):
         #Skip 2x2 problems for testing Project 2
-        if problem.problemType == '2x2': #or problem.name != 'Basic Problem C-12':
+        if problem.problemType == '2x2':# or problem.name != 'Basic Problem C-09':
             return -1
         print('-----------------------------------------------------------------------------------')
         print ('Beginning to solve problem {} of type {}'.format(problem.name, problem.problemType))
@@ -79,8 +79,51 @@ class Agent:
                 answer = self.transformation_y_axis_reflection(problem_images, problem_type)
             if answer == -1:
                 answer = self.transformation_vertical_intersection(problem_images, problem_type)
+            if answer == -1:
+                answer = self.transformation_half_reflection(problem_images, problem_type)
         return answer
 
+    def transformation_half_reflection(self, problem_images, problem_type):
+        print('Solve by HORIZONTAL INTERSECTION transformation')
+        image_a = problem_images['A']
+        image_b = problem_images['B']
+        image_c = problem_images['C']
+        image_d = problem_images['D']
+        image_e = problem_images['E']
+        image_f = problem_images['F']
+        image_g = problem_images['G']
+        image_h = problem_images['H']
+
+
+        image_a = get_cropped_image(image_a)
+        img_a_width, img_a_height = image_a.size
+        image_a_first_half = image_a.crop((0,0,img_a_width/2, img_a_height))
+        image_a_second_half = image_a.crop((img_a_width/2, 0, img_a_width, img_a_height))
+
+
+        image_c = get_cropped_image(image_c)
+        img_c_width, img_c_height = image_c.size
+        image_c_first_half = get_cropped_image(image_c.crop((0,0,img_c_width/2, img_c_height)))
+        image_c_second_half = get_cropped_image(image_c.crop((img_c_width/2, 0, img_c_width, img_c_height)))
+
+
+        image_ac_first_half_intersect = check_if_same(image_a_first_half, image_c_second_half)
+
+
+        image_g = get_cropped_image(image_g)
+        img_g_width, img_g_height = image_g.size
+        image_g_first_half = get_cropped_image(image_g.crop((0,0,img_g_width/2, img_g_height)))
+        image_g_second_half = get_cropped_image(image_g.crop((img_g_width/2, 0, img_g_width, img_g_height)))
+
+        if image_ac_first_half_intersect:
+            for choice in range(1, 9):
+                image_choice = get_cropped_image(problem_images[str(choice)])
+                image_choice_width, image_choice_height = image_choice.size
+                image_choice_second_half = get_cropped_image(image_choice.crop((img_g_width / 2, 0, img_g_width, img_g_height)))
+                image_g_answer_half_intersect = check_if_same_special(image_g_first_half, image_choice_second_half)
+                if image_g_answer_half_intersect:
+                    return choice
+        return -1
 
     def transformation_vertical_intersection(self, problem_images, problem_type):
         print('Solve by VERTICAL INTERSECTION transformation')
@@ -325,7 +368,7 @@ class Agent:
                 black_pixel_ratio_image_choice = count_black_pixels(image_choice) / count_total_pixels(image_choice)
                 ratio_diff_horizontal = black_pixel_ratio_image_choice - black_pixel_ratio_h
                 ratio_diff_vertical = black_pixel_ratio_image_choice - black_pixel_ratio_f
-                if (horizontal_increase and ratio_diff_horizontal < 0) or (ratio_diff_horizontal/black_pixels_ratio_diff_ef <= 0.09):
+                if (horizontal_increase and ratio_diff_horizontal < 0) or abs(ratio_diff_horizontal/black_pixels_ratio_diff_ef) <= 0.09:
                     continue
                 #horizontal increase ratio same
                 if abs(black_pixels_ratio_diff_bc - black_pixels_ratio_diff_ab) <= 0.005:
@@ -333,6 +376,22 @@ class Agent:
                         potential_solutions.append(choice)
                         continue
                 if abs(ratio_diff_horizontal - ratio_diff_vertical) <= 0.0001:
+                    potential_solutions.append(choice)
+            if len(potential_solutions) == 1:
+                return potential_solutions[0]
+
+            vertical_increase = False
+            if black_pixels_ratio_diff_cf > 0 and black_pixels_ratio_diff_be > 0:
+                vertical_increase = True
+
+            potential_solutions = []
+            for choice in range(1, 9):
+                image_choice = problem_images[str(choice)]
+                black_pixel_ratio_image_choice = count_black_pixels(image_choice) / count_total_pixels(image_choice)
+                ratio_diff_vertical = black_pixel_ratio_image_choice - black_pixel_ratio_f
+                if (vertical_increase and ratio_diff_vertical < 0):
+                    continue
+                if abs(ratio_diff_vertical - black_pixels_ratio_diff_cf) <= 0.01:
                     potential_solutions.append(choice)
             if len(potential_solutions) == 1:
                 return potential_solutions[0]
