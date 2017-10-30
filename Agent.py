@@ -11,7 +11,7 @@
 # Install Pillow and uncomment this line to access image processing.
 from PIL import Image, ImageChops
 import numpy as np
-from AgentHelper import check_if_same, get_answer_by_image, count_black_pixels, count_total_pixels, check_if_same_special, calc_rms, get_cropped_image
+from AgentHelper import check_if_same, get_answer_by_image, count_black_pixels, count_total_pixels, calc_rms, get_cropped_image
 
 class Agent:
     # The default constructor for your Agent. Make sure to execute any
@@ -34,8 +34,8 @@ class Agent:
     # Returning your answer as a string may cause your program to crash.
     def Solve(self,problem):
         #Skip 2x2 problems for testing Project 2
-        if problem.problemType == '2x2':# or problem.name != 'Basic Problem C-09':
-            return -1
+        # if problem.problemType == '2x2': #or problem.name != 'Basic Problem C-10':
+        #     return -1
         print('-----------------------------------------------------------------------------------')
         print ('Beginning to solve problem {} of type {}'.format(problem.name, problem.problemType))
         problem_images = {}
@@ -50,33 +50,28 @@ class Agent:
 
     def build_semantic_network_and_solve(self, problem_images, problem_type):
         answer = -1
-
         if problem_type == '2x2':
-            image_a = problem_images['A']
-            image_b = problem_images['B']
-            image_c = problem_images['C']
-
             if answer == -1:
                 answer = self.transformation_unchanged(problem_images, problem_type)
             if answer == -1:
                 answer = self.transformation_y_axis_reflection(problem_images, problem_type)
             if answer == -1:
-                answer = self.transformation_x_axis_reflection(image_a, image_b, image_c, problem_images, problem_type)
+                answer = self.transformation_x_axis_reflection(problem_images, problem_type)
             if answer == -1:
-                answer = self.transformation_rotation(image_a, image_b, image_c, problem_images, problem_type)
+                answer = self.transformation_rotation(problem_images, problem_type)
             if answer == -1:
                 answer = self.transformation_pixel_diff(problem_images, problem_type)
             if answer == -1:
                 answer = self.transformation_pixel_ratio_frame(problem_images, problem_type)
             if answer == -1:
-                answer = self.transformation_and(image_a, image_b, image_c, problem_images)
+                answer = self.transformation_and(problem_images, problem_type)
         elif problem_type == '3x3':
             if answer == -1:
                 answer = self.transformation_unchanged(problem_images, problem_type)
             if answer == -1:
-                answer = self.transformation_pixel_ratio_frame(problem_images, problem_type)
-            if answer == -1:
                 answer = self.transformation_y_axis_reflection(problem_images, problem_type)
+            if answer == -1:
+                answer = self.transformation_pixel_ratio_frame(problem_images, problem_type)
             if answer == -1:
                 answer = self.transformation_vertical_intersection(problem_images, problem_type)
             if answer == -1:
@@ -120,7 +115,7 @@ class Agent:
                 image_choice = get_cropped_image(problem_images[str(choice)])
                 image_choice_width, image_choice_height = image_choice.size
                 image_choice_second_half = get_cropped_image(image_choice.crop((img_g_width / 2, 0, img_g_width, img_g_height)))
-                image_g_answer_half_intersect = check_if_same_special(image_g_first_half, image_choice_second_half)
+                image_g_answer_half_intersect = check_if_same(image_g_first_half, image_choice_second_half)
                 if image_g_answer_half_intersect:
                     return choice
         return -1
@@ -138,14 +133,14 @@ class Agent:
 
         image_ag_intersect = ImageChops.logical_or(image_a, image_g)
         image_bh_intersect = ImageChops.logical_or(image_b, image_h)
-        is_same_ag_intersect = check_if_same_special(image_a, image_ag_intersect)
-        is_same_bh_intersect = check_if_same_special(image_b, image_bh_intersect)
+        is_same_ag_intersect = check_if_same(image_a, image_ag_intersect)
+        is_same_bh_intersect = check_if_same(image_b, image_bh_intersect)
 
         image_ad_intersect = ImageChops.logical_or(image_a, image_d)
         image_dg_intersect = ImageChops.logical_or(image_d, image_g)
 
-        is_same_ad_intersect = check_if_same_special(image_d, image_ad_intersect)
-        is_same_dg_intersect = check_if_same_special(image_g, image_dg_intersect)
+        is_same_ad_intersect = check_if_same(image_d, image_ad_intersect)
+        is_same_dg_intersect = check_if_same(image_g, image_dg_intersect)
 
         potential_solutions = {}
         #gradual intersect vertically
@@ -153,7 +148,7 @@ class Agent:
             for choice in range(1, 9):
                 image_choice = problem_images[str(choice)]
                 image_f_ans_intersect = ImageChops.logical_or(image_f, image_choice)
-                is_same_f_ans_intersect = check_if_same_special(image_choice, image_f_ans_intersect)
+                is_same_f_ans_intersect = check_if_same(image_choice, image_f_ans_intersect)
                 rmse = calc_rms(image_choice, image_f_ans_intersect)
                 if is_same_f_ans_intersect:
                     potential_solutions[rmse] = choice
@@ -169,12 +164,12 @@ class Agent:
             for choice in range(1, 9):
                 image_choice = problem_images[str(choice)]
                 image_c_ans_intersect = ImageChops.logical_or(image_c, image_choice)
-                is_same_c_ans_intersect = check_if_same_special(image_c, image_c_ans_intersect)
+                is_same_c_ans_intersect = check_if_same(image_c, image_c_ans_intersect)
                 rmse = calc_rms(image_c, image_c_ans_intersect)
                 black_pixels_c_ratio = count_black_pixels(image_c)/count_total_pixels(image_c)
                 black_pixels_choice_ratio = count_black_pixels(image_choice)/count_total_pixels(image_choice)
                 black_pixels_inc_cchoice = black_pixels_choice_ratio - black_pixels_c_ratio
-                if is_same_c_ans_intersect and not abs(black_pixels_inc_cchoice - black_pixel_inc_ag) > 0.10:
+                if is_same_c_ans_intersect and not abs(black_pixels_inc_cchoice - black_pixel_inc_ag) > 0.1:
                     potential_solutions[rmse] = choice
             if potential_solutions:
                 return potential_solutions[min(potential_solutions.keys())]
@@ -223,8 +218,11 @@ class Agent:
 
         return -1
 
-    def transformation_and(self, image_a, image_b, image_c, problem_images):
+    def transformation_and(self, problem_images, problem_type):
         print('Solve by AND transformation')
+        image_a = problem_images['A']
+        image_b = problem_images['B']
+        image_c = problem_images['C']
 
         image_ab_and = ImageChops.logical_and(image_a, image_b)
         image_ac_and = ImageChops.logical_and(image_a, image_c)
@@ -395,6 +393,17 @@ class Agent:
                     potential_solutions.append(choice)
             if len(potential_solutions) == 1:
                 return potential_solutions[0]
+
+            black_pixels_ratio_diff_ac = black_pixel_ratio_c/black_pixel_ratio_a
+            potential_solutions = []
+            for choice in range(1, 9):
+                image_choice = problem_images[str(choice)]
+                black_pixel_ratio_image_choice = count_black_pixels(image_choice) / count_total_pixels(image_choice)
+                ratio_diff_horizontal = black_pixel_ratio_image_choice/black_pixel_ratio_g
+                if abs(ratio_diff_horizontal - black_pixels_ratio_diff_ac) <= 0.05:
+                    potential_solutions.append(choice)
+                if len(potential_solutions) == 1:
+                    return potential_solutions[0]
         return -1
 
     def transformation_unchanged(self, problem_images, problem_type):
@@ -431,7 +440,6 @@ class Agent:
 
             is_same_ab = check_if_same(image_a, image_b)
             is_same_bc = check_if_same(image_b, image_c)
-            is_same_ac = check_if_same(image_a, image_c)
             is_same_ad = check_if_same(image_a, image_d)
             is_same_dg = check_if_same(image_d, image_g)
             is_same_gh = check_if_same(image_g, image_h)
@@ -471,16 +479,13 @@ class Agent:
                     return answers[0]
         elif problem_type == '3x3':
             image_a = problem_images['A']
-            image_b = problem_images['B']
             image_c = problem_images['C']
             image_d = problem_images['D']
             image_f = problem_images['F']
             image_g = problem_images['G']
-            image_h = problem_images['H']
 
             image_a_reflected = image_a.transpose(Image.FLIP_LEFT_RIGHT)
             image_d_reflected = image_d.transpose(Image.FLIP_LEFT_RIGHT)
-            image_g_reflected = image_g.transpose(Image.FLIP_LEFT_RIGHT)
 
             is_same_ac = check_if_same(image_c, image_a_reflected)
             is_same_df = check_if_same(image_f, image_d_reflected)
@@ -492,8 +497,11 @@ class Agent:
                     return answers[0]
         return -1
 
-    def transformation_x_axis_reflection(self, image_a, image_b, image_c, problem_images, problem_type):
+    def transformation_x_axis_reflection(self, problem_images, problem_type):
         print('Solve by X-AXIS REFLECTION transformation')
+        image_a = problem_images['A']
+        image_b = problem_images['B']
+        image_c = problem_images['C']
 
         image_a_vertical_reflected = image_a.transpose(Image.FLIP_TOP_BOTTOM)
 
@@ -512,8 +520,11 @@ class Agent:
                 return answers[0]
         return -1
 
-    def transformation_rotation(self, image_a, image_b, image_c, problem_images, problem_type):
+    def transformation_rotation(self, problem_images, problem_type):
         print('Solve by ROTATION transformation')
+        image_a = problem_images['A']
+        image_b = problem_images['B']
+        image_c = problem_images['C']
 
         degrees = [-45, -90, -135, -180, -225, -270, -315]
         for angle in degrees:

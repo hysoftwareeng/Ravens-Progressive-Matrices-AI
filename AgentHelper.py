@@ -13,22 +13,20 @@ def check_exactly_same(image_a, image_b):
         return True
     return False
 
-def check_if_same_special(image_a, image_b):
-    if ImageChops.difference(image_a, image_b).getbbox() is None or calc_rms(image_a, image_b) <= 35:
-        return True
-    return False
-
 def get_cropped_image(image_a):
     pixels = np.asarray(image_a)
     #retrieve top x coordinate
     coordinates = np.argwhere(pixels == False)
-    top = min(coordinates[:,0])
-    bottom = max(coordinates[:,0])
-    left =  min(coordinates[:,1])
-    right = max(coordinates[:,1])
-    width = right - left + 1
-    height = bottom - top + 1
-    return image_a.crop((left, top, right, bottom))
+    try:
+        top = min(coordinates[:,0])
+        bottom = max(coordinates[:,0])
+        left =  min(coordinates[:,1])
+        right = max(coordinates[:,1])
+        width = right - left + 1
+        height = bottom - top + 1
+        return image_a.crop((left, top, right, bottom))
+    except:
+        return image_a
 
 
 
