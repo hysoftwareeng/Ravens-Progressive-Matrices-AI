@@ -1,10 +1,14 @@
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageOps
 import numpy as np
 import math
 
-
 def check_if_same(image_a, image_b):
     if ImageChops.difference(image_a, image_b).getbbox() is None or calc_rms(image_a, image_b) <= 45:
+        return True
+    return False
+
+def check_if_same_xor(image_a, image_b):
+    if ImageChops.difference(image_a, image_b).getbbox() is None or calc_rms(image_a, image_b) <= 50:
         return True
     return False
 
@@ -42,6 +46,18 @@ def get_answer_by_image(image_template, problem_images, problem_type):
             answer_choice.append(choice)
     return answer_choice
 
+#retrieves exact answer only, other returns -1
+def get_exact_answer_by_image(image_template, problem_images, problem_type):
+    answer_choice = []
+    if problem_type == '2x2':
+        choices = 7
+    elif problem_type == '3x3':
+        choices = 9
+    for choice in range(1, choices):
+        image_choice = problem_images[str(choice)]
+        if check_exactly_same(image_template, image_choice):
+            answer_choice.append(choice)
+    return answer_choice
 
 #REFERENCED METHOD: http://effbot.org/zone/pil-comparing-images.htm#rms
 def calc_rms(source, compare):
